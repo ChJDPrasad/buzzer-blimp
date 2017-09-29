@@ -24,12 +24,12 @@ def Cm(alpha):
 
 def Mcp(alpha, kite, envelope, z, q):
     a, b = envelope.a, envelope.a / envelope.phi
-    B = envelope.buoyancy
-    W = envelope.weight + w_excess
+    B = envelope.buoyancy * 9.8
+    W = (envelope.weight + w_excess) * 9.8
     S = envelope.ref_area
 
     cr = kite.lk
-    Wk = kite.weight
+    Wk = kite.weight * 9.8
     Sk = kite.horizontal_area
 
     Lk = q * Sk * Clk(alpha)
@@ -61,7 +61,7 @@ def calc_Ty(alpha, v, kite, envelope):
     q = 0.5 * rho_air * v**2
     Lk = q * kite.horizontal_area * Clk(alpha)
     L = q * envelope.ref_area * Cl(alpha)
-    return L + Lk + envelope.buoyancy - envelope.weight - kite.weight
+    return L + Lk + envelope.buoyancy * 9.8 - envelope.weight * 9.8 - w_excess * 9.8 - kite.weight * 9.8
 
 def calc_Tx(alpha, v, kite, envelope):
     q = 0.5 * rho_air * v**2
