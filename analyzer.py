@@ -27,7 +27,7 @@ def print_info(tether, kite, envelope):
 
     print("Total weight", total_weight)
 
-def analyze(lk=5, z=1.6):
+def analyze(lk=5, z=1.6, print_stuff=False):
     kite = Kite(lk, 0.5 * 1.08 * lk, 0.)
     tether = Tether(100.)
 
@@ -35,9 +35,10 @@ def analyze(lk=5, z=1.6):
     envelope = Envelope(a, 1.6)
     sph_payload_weight = envelope.weight + w_excess
 
-    aoa = get_aerod_data(z,v, (sph_payload_weight)*g,envelope.buoyancy*g, kite.weight * g,
+    aerod_data = get_aerod_data(z,v, (sph_payload_weight)*g,envelope.buoyancy*g, kite.weight * g,
                     envelope.ref_area, kite.horizontal_area,
-                    envelope.a, envelope.c, lk)["alpha"]
+                    envelope.a, envelope.c, lk)
+    aoa = aerod_data["alpha"]
 
     Ty = calc_Ty(aoa, v, sph_payload_weight * g, kite.weight * g,
                 envelope.buoyancy * g, envelope.ref_area, kite.horizontal_area)
@@ -45,7 +46,11 @@ def analyze(lk=5, z=1.6):
     blowby = tether.calc_blowby(Tx, Ty)
     altitude = tether.calc_altitude(Tx, Ty)
 
+    if print_stuff:
+        print_info(tether, kite, envelope)
+        print_analysis(aerod_data, Tx, Ty, blowby, altitude)
+
     return blowby, altitude, Tx, Ty
 
 if __name__ == "__main__":
-    analyze(6, 2)
+    pass
