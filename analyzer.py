@@ -1,10 +1,19 @@
+from __future__ import print_function
+
 from common import Tether, Kite, Envelope
 from stability import *
 from sizing import find_a
 from constants import *
 import numpy as np
 import matplotlib.pyplot as plt
-from __future__ import print_function
+
+
+def print_analysis(aerod_data, Tx, Ty, blowby, altitude):
+    print('aoa: ' + str(aerod_data["alpha"]))
+    print("Tx: ", Tx)
+    print("Ty: ", Ty)
+    print("Blowby: ", blowby)
+    print("Altitude: ", altitude)
 
 
 def print_info(tether, kite, envelope):
@@ -21,28 +30,27 @@ def print_info(tether, kite, envelope):
     print("Total weight", total_weight)
 
 
-def analyze(lk=5, z=1.6):
+def analyze(lk=5, z=1.6, print_stuff=False):
     kite = Kite(lk, 0.5 * 1.08 * lk, 0.)
     tether = Tether(100.)
 
     a = find_a(1.6, kite, tether)
     envelope = Envelope(a, 1.6)
-    sph_payload_weight = envelope.weight + w_excess
 
-    aoa = get_aerod_data(z, v, (sph_payload_weight) * g, envelope.buoyancy * g, kite.weight * g,
-                         envelope.ref_area, kite.horizontal_area,
-                         envelope.a, envelope.c, lk)["alpha"]
+    aerod_data = get_aerod_data(z, v, kite, envelope)
+    aoa = aerod_data["alpha"]
 
-    Ty = calc_Ty(aoa, v, sph_payload_weight * g, kite.weight * g,
-                 envelope.buoyancy * g, envelope.ref_area, kite.horizontal_area)
-    Tx = calc_Tx(aoa, v, envelope.ref_area, kite.horizontal_area)
+    Ty = calc_Ty(aoa, v, kite, envelope)
+    Tx = calc_Tx(aoa, v, kite, envelope)
+    blowby = tether.calc_blowby(Tx, Ty)
+    altitude = tether.calc_altitude(Tx, Ty)
 
-    print('aoa: ' + str(aoa))
-    print("Tx: ", Tx)
-    print("Ty: ", Ty)
-    print("Blowby: ", tether.calc_blowby(Tx, Ty))
-    print("Altitude: ", tether.calc_altitude(Tx, Ty))
+    if print_stuff:
+        print_info(tether, kite, envelope)
+        print_analysis(aerod_data, Tx, Ty, blowby, altitude)
+
+    return blowby, altitude, Tx, Ty
 
 
 if __name__ == "__main__":
-    analyze(6, 2)
+    analyze(print_stuff=True)
