@@ -6,10 +6,6 @@ import matplotlib.pyplot as plt
 def sec(x):
     return 1. / np.cos(x)
 
-def plot_profile(rho_tether, L, Tx, Ty):
-    x, y = calc_profile(rho_tether, L, Tx, Ty)
-    plt.plot(x, y)
-
 
 class Kite(object):
     def __init__(self, lk, bk, hk,
@@ -51,11 +47,10 @@ class Tether(object):
     @property
     def weight(self):
         return self.density * self.length
-    
+
     def _displacements(self, Tx, Ty):
         x, y, theta0, theta1 = self.calc_profile(Tx, Ty)
         return x(theta1), y(theta1)
-
 
     def calc_profile(self, Tx, Ty):
         K = (Tx / (self.density * 9.81))
@@ -67,6 +62,12 @@ class Tether(object):
 
         return x, y, theta0, theta1
 
+    def plot_profile(self, Tx, Ty):
+        x, y, theta0, theta1 = self.calc_profile(Tx, Ty)
+        theta = np.linspace(theta0, theta1, 1000)
+        x, y = x(theta), y(theta)
+        plt.plot(x, y)
+
     def calc_blowby(self, Tx, Ty):
         return self._displacements(Tx, Ty)[0]
 
@@ -77,7 +78,7 @@ class Tether(object):
 class Envelope(object):
     def __init__(self, a, phi, density=rho_envelope):
         self.a = a
-        self.phi = phi  
+        self.phi = phi
         self.density = density
 
     @property
