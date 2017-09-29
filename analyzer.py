@@ -6,6 +6,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
+def print_analysis(aerod_data, Tx, Ty, blowby, altitude):
+    print('aoa: ' + str(aerod_data["alpha"]))
+    print("Tx: ", Tx)
+    print("Ty: ", Ty)   
+    print("Blowby: ", blowby)
+    print("Altitude: ", altitude)
+    
+
 def print_info(tether, kite, envelope):
     total_weight = envelope.weight + kite.weight + tether.weight + w_excess
 
@@ -34,12 +42,10 @@ def analyze(lk=5, z=1.6):
     Ty = calc_Ty(aoa, v, sph_payload_weight * g, kite.weight * g,
                 envelope.buoyancy * g, envelope.ref_area, kite.horizontal_area)
     Tx = calc_Tx(aoa, v, envelope.ref_area, kite.horizontal_area)
+    blowby = tether.calc_blowby(Tx, Ty)
+    altitude = tether.calc_altitude(Tx, Ty)
 
-    print('aoa: ' + str(aoa))
-    print("Tx: ", Tx)
-    print("Ty: ", Ty)   
-    print("Blowby: ", tether.calc_blowby(Tx, Ty))
-    print("Altitude: ", tether.calc_altitude(Tx, Ty))
+    return blowby, altitude, Tx, Ty
 
 if __name__ == "__main__":
     analyze(6, 2)
