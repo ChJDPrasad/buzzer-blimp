@@ -33,16 +33,12 @@ def analyze(lk=5, z=1.6, print_stuff=False):
 
     a = find_a(1.6, kite, tether)
     envelope = Envelope(a, 1.6)
-    sph_payload_weight = envelope.weight + w_excess
 
-    aerod_data = get_aerod_data(z,v, (sph_payload_weight)*g,envelope.buoyancy*g, kite.weight * g,
-                    envelope.ref_area, kite.horizontal_area,
-                    envelope.a, envelope.c, lk)
+    aerod_data = get_aerod_data(z,v, kite, envelope)
     aoa = aerod_data["alpha"]
 
-    Ty = calc_Ty(aoa, v, sph_payload_weight * g, kite.weight * g,
-                envelope.buoyancy * g, envelope.ref_area, kite.horizontal_area)
-    Tx = calc_Tx(aoa, v, envelope.ref_area, kite.horizontal_area)
+    Ty = calc_Ty(aoa, v, kite, envelope)
+    Tx = calc_Tx(aoa, v, kite, envelope)
     blowby = tether.calc_blowby(Tx, Ty)
     altitude = tether.calc_altitude(Tx, Ty)
 
