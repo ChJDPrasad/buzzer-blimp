@@ -2,6 +2,8 @@ import numpy as np
 import random
 import matplotlib.pyplot as plt
 import pdb
+
+
 # from text_recog import *
 
 
@@ -10,7 +12,7 @@ class Particle:
 
     def __init__(self, dimension, ranges):
         self.position = ((ranges[:, 1] - ranges[:, 0]) *
-                np.random.rand(dimension) + ranges[:, 0])
+                         np.random.rand(dimension) + ranges[:, 0])
         self.velocity = (0.1 * (ranges[:, 1] - ranges[:, 0]) * np.random.rand(
             dimension)) + 0.1 * ranges[:, 0]
         self.pbest = self.position
@@ -21,7 +23,6 @@ class Particle:
 
 
 class Swarm(Particle):
-
     def __init__(self, numParticles, error_function, pdeath=0.005,
                  dimension=2, w=0.729, c1=1.49445,
                  c2=1.49445, exit_error=0, ranges=[[3, 15], [0, 15]], constraint_chk=lambda x: True):
@@ -50,12 +51,12 @@ class Swarm(Particle):
         for i in range(self.numParticles):
             self.r1, self.r2 = np.random.rand(2)
             self.swarm[i].velocity = (self.w * self.swarm[i].velocity +
-                                self.c1 * self.r1 * (self.swarm[i].pbest - self.swarm[i].position) +
-                                self.c2 * self.r2 * (self.gbest - self.swarm[i].position))
+                                      self.c1 * self.r1 * (self.swarm[i].pbest - self.swarm[i].position) +
+                                      self.c2 * self.r2 * (self.gbest - self.swarm[i].position))
             self.swarm[i].position = (self.swarm[i].position +
                                       self.swarm[i].velocity)
             self.swarm[i].update_pbest(self.error_function)
-            
+
             rnd = random.random()
             if rnd < self.pdeath or not self.constraint_chk(self.swarm[i].position):
                 self.swarm[i].__init__(self.dimension, self.ranges)
@@ -67,12 +68,14 @@ class Swarm(Particle):
         while self.error_function(self.gbest) > self.exit_error:
             J.append(self.error_function(self.gbest))
             self.update_step()
-            self.display_positions()
+            # self.display_positions()
             it += 1
             print("iteration number: ", it, " Cost: ", J[-1])
             if it > iterations: break
-        plt.plot(J); plt.show()
-    
+        # plt.plot(J)
+        # plt.show()
+        return self.gbest
+
     def display_positions(self):
         x_pos = [self.swarm[i].position[0] for i in range(self.numParticles)]
         y_pos = [self.swarm[i].position[1] for i in range(self.numParticles)]

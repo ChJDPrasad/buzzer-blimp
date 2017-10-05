@@ -64,4 +64,5 @@ def analyze(lk=4.5, x=0., z=3., print_stuff=False):
 
 
 if __name__ == "__main__":
-    analyze(lk=0., print_stuff=True)
+    analyze(0.014, x=1.2, z=0., print_stuff=True)
+    # analyze(lk=1.814., x=1.2, z=15, print_stuff=True)
