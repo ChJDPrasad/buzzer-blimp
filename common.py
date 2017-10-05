@@ -1,7 +1,7 @@
 from constants import *
 import numpy as np
 import matplotlib.pyplot as plt
-
+from numpy import sin, cos, arctan
 
 def sec(x):
     return 1. / np.cos(x)
@@ -54,23 +54,36 @@ class Tether(object):
         return np.pi * self.radius ** 2
 
     def _displacements(self, Tx, Ty):
-        x, y, theta0, theta1 = self.calc_profile(Tx, Ty)
-        return x(theta1), y(theta1)
+        x, y = self.calc_profile(Tx, Ty)
+        return x[-1], y[-1]
 
-    def calc_profile(self, Tx, Ty):
-        K = (Tx / (self.density * 9.81))
-        theta0 = np.arctan((Ty - self.density * 9.81 * self.length) / Tx)
-        theta1 = np.arctan(Ty / Tx)
-        x = lambda theta: K * (np.log(np.abs(sec(theta) + np.tan(theta))) - \
-                               np.log(np.abs(sec(theta0) + np.tan(theta0))))
-        y = lambda theta: K * (sec(theta) - sec(theta0))
+    def calc_profile(self, Tx, Ty, cd=1., ds=0.1):
+        n = int(self.length // ds + 2)
+        theta0 = np.arctan(Ty / Tx)
 
-        return x, y, theta0, theta1
+        theta = np.zeros((n,))
+        T = np.zeros_like(theta)
+
+        theta[0] = theta0
+
+        T[0] = (Tx ** 2 + Ty ** 2) ** 0.5
+        dW = self.density * ds * 9.81
+
+        for i in range(n - 1):
+            dD = 0.5 * 1.225 * (v * sin(theta[i])) ** 2 * (2 * self.radius) * ds * cd
+
+            theta[i + 1] = arctan((T[i] * sin(theta[i]) - dW - dD * cos(theta[i])) /
+                                  (T[i] * cos(theta[i]) + dD * sin(theta[i])))
+            T[i + 1] = (T[i] * cos(theta[i]) + dD * sin(theta[i])) / cos(theta[i + 1])
+
+        x, y = np.zeros_like(theta), np.zeros_like(theta)
+        for i in range(1, n):
+            x[i] = x[i - 1] + ds * cos(theta[n - i - 1])
+            y[i] = y[i - 1] + ds * sin(theta[n - i - 1])
+        return x, y
 
     def plot_profile(self, Tx, Ty):
-        x, y, theta0, theta1 = self.calc_profile(Tx, Ty)
-        theta = np.linspace(theta0, theta1, 1000)
-        x, y = x(theta), y(theta)
+        x, y = self.calc_profile(Tx, Ty)
         plt.plot(x, y)
 
     def calc_blowby(self, Tx, Ty):
