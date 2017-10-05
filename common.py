@@ -40,13 +40,18 @@ class Kite(object):
 
 
 class Tether(object):
-    def __init__(self, length, density=rho_tether):
+    def __init__(self, length, density=rho_tether, radius=r_tether):
         self.length = length
         self.density = density
+        self.radius = radius
 
     @property
     def weight(self):
         return self.density * self.length
+
+    @property
+    def area(self):
+        return np.pi * self.radius ** 2
 
     def _displacements(self, Tx, Ty):
         x, y, theta0, theta1 = self.calc_profile(Tx, Ty)

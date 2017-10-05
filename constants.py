@@ -1,7 +1,9 @@
 rho_air = 1.225
 rho_gas = 0.08988 * 1.15
-rho_envelope = 0.08
+rho_envelope = 0.23
 rho_tether = 0.015
+
+r_tether = 0.002
 
 w_eqp = 3
 w_payload = 12.

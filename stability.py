@@ -5,6 +5,10 @@ from constants import *
 from scipy.misc import derivative
 
 
+def sec(theta):
+    return 1. / np.cos(theta)
+
+
 def Clk(alpha):
     return (0.9848 * (alpha) ** 2 + 0.7665 * (alpha) + 0.1002)
 
@@ -29,7 +33,7 @@ def Cm(alpha):
     return -(0.2071 * (alpha) ** 2 - 0.5647 * (alpha) + 0.0012)
 
 
-def Mcp(alpha, kite, envelope, z, q):
+def Mcp(alpha, kite, envelope, x, z, q):
     a, b = envelope.a, envelope.a / envelope.phi
     B = envelope.buoyancy * 9.8
     W = (envelope.weight + w_excess) * 9.8
@@ -46,14 +50,21 @@ def Mcp(alpha, kite, envelope, z, q):
     D = q * S * Cd(alpha)
     M = q * S * 2 * a * Cm(alpha)
 
-    return Wk * (z * sin(alpha) + cr / 3 * cos(alpha)) + (W - L - B) * (b + z) * \
-                                                         sin(alpha) - Lk * (z * sin(alpha) + cr / 2 * cos(alpha)) + \
-           Mk + M + D * (b + z) * cos(alpha) + Dk * (z * cos(alpha) - cr / 2 * sin(alpha))
+    return Wk * (x * (sec(alpha) - tan(alpha) * sin(alpha)) + z * sin(alpha) + cr / 3 * cos(alpha)) + \
+           (W - L - B) * (b * sin(alpha) + z * sin(alpha) + x * (sec(alpha) - tan(alpha) * sin(alpha))) - \
+           Lk * (z * sin(alpha) + cr / 2 * cos(alpha) + x * (sec(alpha) - tan(alpha) * sin(alpha))) + \
+           D * (b * cos(alpha) + z * cos(alpha) - x * sin(alpha)) + \
+           Dk * (z * cos(alpha) - cr / 2 * sin(alpha) - x * sin(alpha)) + \
+           Mk + M
 
 
-def get_aerod_data(z, v, kite, envelope):
+def Mcp_alpha(alpha, kite, envelope, x, z, q):
+    return derivative(Mcp, alpha, args=(kite, envelope, x, z, q))
+
+
+def get_aerod_data(x, z, v, kite, envelope):
     q = 0.5 * rho_air * v ** 2
-    alpha = fsolve(Mcp, 0.1, args=(kite, envelope, z, q))[0]
+    alpha = fsolve(Mcp, 0.1, args=(kite, envelope, x, z, q))[0]
 
     Lk = q * kite.horizontal_area * Clk(alpha)
     Dk = q * kite.horizontal_area * Cdk(alpha)
@@ -61,9 +72,10 @@ def get_aerod_data(z, v, kite, envelope):
     L = q * envelope.ref_area * Cl(alpha)
     D = q * envelope.ref_area * Cd(alpha)
     M = q * envelope.ref_area * 2 * envelope.a * Cm(alpha)
+    Cm_alpha = Mcp_alpha(alpha, kite, envelope, x, z, q) / (q * envelope.ref_area * 2 * envelope.a)
 
     return {"alpha": alpha, "L": L, "Lk": Lk, "D": D, \
-            "Dk": Dk, "M": M, "Mk": Mk}
+            "Dk": Dk, "M": M, "Mk": Mk, "q": q, "Cm_alpha": Cm_alpha}
 
 
 def calc_Ty(alpha, v, kite, envelope):
