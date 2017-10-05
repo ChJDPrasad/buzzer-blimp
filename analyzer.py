@@ -46,7 +46,7 @@ def analyze(lk=5, z=1.6, print_stuff=False):
         print_info(tether, kite, envelope)
         print_analysis(aerod_data, Tx, Ty, blowby, altitude)
 
-    return blowby, altitude, Tx, Ty
+    return blowby, altitude, Tx, Ty, aerod_data
 
 if __name__ == "__main__":
     pass
