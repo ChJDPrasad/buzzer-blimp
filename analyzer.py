@@ -8,6 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from structures import calc_circumferential_stress, calc_tether_stress
 
+
 def print_analysis(aerod_data, Tx, Ty, blowby, altitude, N_circ, s_tether):
     print('aoa: ' + str(aerod_data["alpha"]))
     print("Tx: ", Tx)
@@ -37,14 +38,14 @@ def print_info(tether, kite, envelope):
     print("Total weight", total_weight)
 
 
-def analyze(lk=4.5, z=1.6, print_stuff=False):
+def analyze(lk=4.5, x=0., z=3., print_stuff=False):
     kite = Kite(lk, 0.5 * 1.08 * lk, 0.)
     tether = Tether(100.)
 
     a = find_a(1.6, kite, tether)
     envelope = Envelope(a, 1.6)
 
-    aerod_data = get_aerod_data(z, v, kite, envelope)
+    aerod_data = get_aerod_data(x, z, v, kite, envelope)
     aoa = aerod_data["alpha"]
 
     Ty = calc_Ty(aoa, v, kite, envelope)
@@ -54,13 +55,12 @@ def analyze(lk=4.5, z=1.6, print_stuff=False):
 
     N_circ = calc_circumferential_stress(v, aoa, envelope)
     s_tether = calc_tether_stress(tether, Tx, Ty)
-    Cm_alpha = aerod_data['Cm_alpha']
 
     if print_stuff:
         print_info(tether, kite, envelope)
         print_analysis(aerod_data, Tx, Ty, blowby, altitude, N_circ, s_tether)
 
-    return blowby, altitude, Tx, Ty, Cm_alpha
+    return blowby, altitude, Tx, Ty, aerod_data
 
 
 if __name__ == "__main__":
