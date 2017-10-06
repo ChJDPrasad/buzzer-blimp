@@ -3,8 +3,10 @@ from numpy import sin, cos, tan
 from scipy.optimize import fsolve
 from constants import *
 from scipy.misc import derivative
+from numba import jit, njit
 
 
+@njit
 def sec(theta):
     return 1. / np.cos(theta)
 
@@ -33,6 +35,7 @@ def Cm(alpha):
     return -(0.2071 * (alpha) ** 2 - 0.5647 * (alpha) + 0.0012)
 
 
+@jit
 def Mcp(alpha, kite, envelope, x, z, q):
     a, b = envelope.a, envelope.a / envelope.phi
     B = envelope.buoyancy * 9.8

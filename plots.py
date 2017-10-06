@@ -39,14 +39,30 @@ plt.ylabel('Blowby')
 plt.savefig('plots/blowby-vs-kite-length.png', bbox_inches="tight")
 plt.clf()
 
-plt.title("Blowby variation vs Kite length")
-kl = np.linspace(0., 4., 20)
-bb = [analyze(5.1, z=_, print_stuff=False)[0] for _ in kl]
-cm_alpha = [analyze(5.1, z=_, print_stuff=False)[4] for _ in kl]
-plt.plot(kl, bb)
-plt.plot(kl, cm_alpha)
-plt.xlabel('Kite Length')
-plt.ylabel('Blowby')
+# plt.title("Blowby variation vs Kite length")
+# kl = np.linspace(0., 4., 20)
+# bb = [analyze(5.1, z=_, print_stuff=False)[0] for _ in kl]
+# cm_alpha = [analyze(5.1, z=_, print_stuff=False)[4] for _ in kl]
+# plt.plot(kl, bb)
+# plt.plot(kl, cm_alpha)
+# plt.xlabel('Kite Length')
+# plt.ylabel('Blowby')
+#
+# plt.savefig('plots/blowby-vs-z.png', bbox_inches="tight")
+# plt.clf()
 
-plt.savefig('plots/blowby-vs-z.png', bbox_inches="tight")
+lk = np.linspace(0., 10., 100)
+plt.title("Equilibrium angle of attack vs kite root chord length")
+aoa = np.zeros_like(lk)
+cm_alpha = np.zeros_like(lk)
+for i in range(len(lk)):
+    aerod_data = analyze(lk[i], 1.2, 1.5)[4]
+    aoa[i] = aerod_data['alpha']
+    cm_alpha[i] = aerod_data['Cm_alpha']
+
+plt.plot(lk, aoa, label=r"$\alpha$")
+plt.plot(lk, cm_alpha, label=r"$c_{m_\alpha}$")
+plt.legend(loc='best')
+plt.savefig('plots/aoa-vs-lk.png', bbox_inches='tight')
 plt.clf()
+

@@ -2,6 +2,8 @@ from constants import *
 import numpy as np
 import matplotlib.pyplot as plt
 from numpy import sin, cos, arctan
+from numba import jit
+
 
 def sec(x):
     return 1. / np.cos(x)
@@ -9,12 +11,12 @@ def sec(x):
 
 class Kite(object):
     def __init__(self, lk, bk, hk,
-                 spine_density=0.1, envelope_density=0.08258, rod_density=0.08):
+                 spine_density=0.1, kite_density=rho_kite, rod_density=0.08):
         self.lk = lk
         self.bk = bk
         self.hk = hk
         self.spine_density = spine_density
-        self.envelope_density = envelope_density
+        self.envelope_density = kite_density
         self.rod_density = rod_density
 
     @property
@@ -57,12 +59,14 @@ class Tether(object):
         x, y = self.calc_profile(Tx, Ty)
         return x[-1], y[-1]
 
-    def calc_profile(self, Tx, Ty, cd=1., ds=0.1):
+    @jit
+    def calc_profile(self, Tx, Ty, cd=1., ds=0.2):
         n = int(self.length // ds + 2)
         theta0 = np.arctan(Ty / Tx)
-
         theta = np.zeros((n,))
+        x, y = np.zeros_like(theta), np.zeros_like(theta)
         T = np.zeros_like(theta)
+        radius = self.radius
 
         theta[0] = theta0
 
@@ -70,16 +74,16 @@ class Tether(object):
         dW = self.density * ds * 9.81
 
         for i in range(n - 1):
-            dD = 0.5 * 1.225 * (v * sin(theta[i])) ** 2 * (2 * self.radius) * ds * cd
+            dD = 0.5 * 1.225 * (v * sin(theta[i])) ** 2 * (2 * radius) * ds * cd
 
             theta[i + 1] = arctan((T[i] * sin(theta[i]) - dW - dD * cos(theta[i])) /
                                   (T[i] * cos(theta[i]) + dD * sin(theta[i])))
             T[i + 1] = (T[i] * cos(theta[i]) + dD * sin(theta[i])) / cos(theta[i + 1])
 
-        x, y = np.zeros_like(theta), np.zeros_like(theta)
         for i in range(1, n):
             x[i] = x[i - 1] + ds * cos(theta[n - i - 1])
             y[i] = y[i - 1] + ds * sin(theta[n - i - 1])
+
         return x, y
 
     def plot_profile(self, Tx, Ty):
