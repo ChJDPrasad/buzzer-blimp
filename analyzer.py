@@ -60,10 +60,10 @@ def analyze(lk=4.5, x=0., z=3., print_stuff=False):
         print_info(tether, kite, envelope)
         print_analysis(aerod_data, Tx, Ty, blowby, altitude, N_circ, s_tether)
 
-    return blowby, altitude, Tx, Ty, aerod_data
+    return blowby + z * (Tx / (Tx ** 2 + Ty ** 2) ** 0.5), altitude, Tx, Ty, aerod_data
 
 
 if __name__ == "__main__":
 
-    analyze(0., x=1.2,  z=3 * 1.407, print_stuff=True)
+    analyze(4.68, x=1.06,  z=4.38, print_stuff=True)
     # analyze(lk=1.814., x=1.2, z=15, print_stuff=True)

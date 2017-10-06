@@ -15,5 +15,10 @@ def stability_constraints(x, *args):
     return -r[4]['Cm_alpha'] - 2.
 
 
-g, f = pso(cost, [0., 0., 0.], [15., 5., 30.], ieqcons=[stability_constraints], debug=True)
+def stability_constraints2(x, *args):
+    r = analyze_local(x)
+    return r[4]['alpha']
+
+
+g, f = pso(cost, [0., 0., 0.], [15., 5., 5.], ieqcons=[stability_constraints], debug=True)
 print(g, f)
