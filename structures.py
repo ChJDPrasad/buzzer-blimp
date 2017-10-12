@@ -2,10 +2,12 @@ from constants import *
 import numpy as np
 
 
-def calc_circumferential_stress(v, alpha, envelope):
+def calc_circumferential_stress(aerostat, v):
+    envelope = aerostat.envelope
+    alpha = aerostat.find_alpha(v)
+
     q = 0.5 * rho_air * v ** 2
     Pi = 1.15 * q
-    V = envelope.volume
 
     Ni = (Pi + (rho_air - rho_gas) * g * envelope.c) * envelope.a
     Nb = np.pi * envelope.a * envelope.c * g * (rho_air - rho_gas) / 2
@@ -15,5 +17,7 @@ def calc_circumferential_stress(v, alpha, envelope):
     return (Ni + Nb + Nbm + Na) * 50 / (9.81 * 10 ** 3)
 
 
-def calc_tether_stress(tether, Tx, Ty):
-    return (Tx ** 2 + Ty ** 2) ** 0.5 / tether.area
+def calc_tether_stress(aerostat, v):
+    force = aerostat.calc_force(aerostat.find_alpha(v), v)
+
+    return (force[0] ** 2 + force[1] ** 2) ** 0.5 / aerostat.tether.area

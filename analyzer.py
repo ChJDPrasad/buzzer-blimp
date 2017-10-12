@@ -1,6 +1,6 @@
 from __future__ import print_function
 
-from common import Tether, Kite, Envelope
+from common import Tether, Kite, Envelope, Aerostat
 from stability import *
 from sizing import find_a
 from constants import *
@@ -38,32 +38,29 @@ def print_info(tether, kite, envelope):
     print("Total weight", total_weight)
 
 
-def analyze(lk=4.5, x=0., z=3., print_stuff=False):
+def initial_sizing(lk, x, z):
     kite = Kite(lk, 0.5 * 1.08 * lk, 0.)
     tether = Tether(100.)
 
     a = find_a(1.6, kite, tether)
     envelope = Envelope(a, 1.6)
 
-    aerod_data = get_aerod_data(x, z, v, kite, envelope)
-    aoa = aerod_data["alpha"]
+    return Aerostat(envelope, kite, tether, x, z, v)
 
-    Ty = calc_Ty(aoa, v, kite, envelope)
-    Tx = calc_Tx(aoa, v, kite, envelope)
-    blowby = tether.calc_blowby(Tx, Ty)
-    altitude = tether.calc_altitude(Tx, Ty)
 
-    N_circ = calc_circumferential_stress(v, aoa, envelope)
-    s_tether = calc_tether_stress(tether, Tx, Ty)
+def analyze(lk=4.5, x=0., z=3., print_stuff=False):
+    aerostat = initial_sizing(lk, x, z)
+
+    N_circ = calc_circumferential_stress(aerostat, v)
+    s_tether = calc_tether_stress(aerostat, v)
 
     if print_stuff:
-        print_info(tether, kite, envelope)
+        aerostat.print_info()
         print_analysis(aerod_data, Tx, Ty, blowby, altitude, N_circ, s_tether)
 
-    return blowby + z * (Tx / (Tx ** 2 + Ty ** 2) ** 0.5), altitude, Tx, Ty, aerod_data
+    return aerostat
 
 
 if __name__ == "__main__":
-
-    analyze(4.68, x=1.06,  z=4.38, print_stuff=True)
-    # analyze(lk=1.814., x=1.2, z=15, print_stuff=True)
+    # analyze(0.94746596, 14.996898, 1.05079009 print_stuff=True)
+    analyze(lk=1.814, x=1.2, z=15, print_stuff=True)
