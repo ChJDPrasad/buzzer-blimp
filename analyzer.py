@@ -56,7 +56,6 @@ def analyze(lk=4.5, x=0., z=3., print_stuff=False):
 
     if print_stuff:
         aerostat.print_info()
-        print_analysis(aerod_data, Tx, Ty, blowby, altitude, N_circ, s_tether)
 
     return aerostat
 

@@ -39,29 +39,32 @@ class Kite(object):
         return 0.5 * self.lk * self.hk
 
     def calc_force(self, alpha, v):
-        fz = 0.5 * rho_air * v**2 * self.horizontal_area * self.calc_cl(alpha) - self.weight * g
-        fx = 0.5 * rho_air * v**2 * self.calc_cd_with_area(alpha)
+        fz = 0.5 * rho_air * v ** 2 * self.horizontal_area * self.calc_cl(alpha) - self.weight * g
+        fx = 0.5 * rho_air * v ** 2 * self.calc_cd(alpha)
         return np.array([fx, fz])
 
     def calc_moment(self, alpha, v, x, z):
-        L = 0.5 * rho_air * v**2 * self.horizontal_area * self.calc_cl(alpha)
-        D = 0.5 * rho_air * v**2 * self.calc_cd_with_area(alpha)
-        M = 0.5 * rho_air * v**2 * self.horizontal_area * self.calc_cm(alpha)
-        return (self.lk / 3 * cos(alpha) - x) * self.weight * g - (self.lk / 2 * cos(alpha) - x) * L +\
-                M + D * (-lk / 2 * sin(alpha) - y)
-    
-    def calc_cl(self, alpha):
-        return (0.9848 * (alpha) ** 2 + 0.7665 * (alpha) + 0.1002)
+        q = 0.5 * rho_air * v ** 2
+        L = q * self.horizontal_area * self.calc_cl(alpha)
+        D = q * self.calc_cd(alpha)
+        M = q * self.horizontal_area * self.calc_cm(alpha)
+        return (self.lk / 3 * cos(alpha) - x) * self.weight * g - (self.lk / 2 * cos(alpha) - x) * L + \
+               M + D * (-self.lk / 2 * sin(alpha) - z)
 
-    def calc_cd_with_area(self, aoa):
-        return (1.8524 * (alpha) ** 2 - 0.1797 * (alpha)) * self.horizontal_area + \
-                0.1536 * (self.horizontal_area + self.vertical_area))
+    def calc_cl(self, alpha):
+        return 0.9848 * (alpha) ** 2 + 0.7665 * (alpha) + 0.1002
+
+    def calc_cd(self, aoa):
+        tmp = (1.8524 * (aoa) ** 2 - 0.1797 * (aoa)) * self.horizontal_area + \
+              0.1536 * (self.horizontal_area + self.vertical_area)
+        return tmp / self.horizontal_area
 
     def calc_cm(self, alpha):
         return -(0.2939 * (alpha) ** 2 + 0.5189 * (alpha) - 0.1921)
 
     def print_info(self):
         pass
+
 
 class Tether(object):
     def __init__(self, length, density=rho_tether, radius=r_tether):
@@ -121,6 +124,7 @@ class Tether(object):
     def print_info(self):
         pass
 
+
 class Envelope(object):
     def __init__(self, a, phi, density=rho_envelope):
         self.a = a
@@ -166,8 +170,14 @@ class Envelope(object):
     def calc_force(self, aoa, v):
         net_force = np.zeros(2)
         q = 0.5 * rho_air * v ** 2
-        net_force[0] = q * self.area * self.calc_cd(aoa)
-        net_force[1] = q * self.area * self.calc_cl(aoa) - self.weight * g + self.buoyancy * g
+        net_force[0] = q * self.ref_area * self.calc_cd(aoa)
+        net_force[1] = q * self.ref_area * self.calc_cl(aoa) - self.weight * g + self.buoyancy * g
+        return net_force
+
+    def calc_moment(self, aoa, v, x, z):
+        net_force = self.calc_force(aoa, v)
+        x0, z0 = self.c * sin(aoa), self.c * cos(aoa)
+        return net_force[0] * (z0 - z) - net_force[1] * (x0 - x)
 
     def print_info(self):
         print("Semi-major axis:\t%.3f" % self.a)
@@ -175,7 +185,7 @@ class Envelope(object):
         print("Envelope Surface Area:\t%.3f" % self.area)
         print("Envelope Volume:\t%.3f" % self.volume)
         print("Envelope Weight:\t%.3f" % self.weight)
-        print("Buoyancy\t:%.3f" % self.buoyancy * g)
+        print("Buoyancy\t:%.3f" % (self.buoyancy * g))
 
 
 class Aerostat(object):
@@ -197,7 +207,7 @@ class Aerostat(object):
         net_force += self.envelope.calc_force(aoa, v)
         return net_force
 
-    def calc_moment(self, aoa, v):
+    def calc_moment(self, aoa, v=None):
         v = self.v if v is None else v
         net_moment = 0.
         net_moment += self.kite.calc_moment(aoa, v, -self.xc, -self.zc)
@@ -211,7 +221,9 @@ class Aerostat(object):
 
     def find_alpha(self, v):
         v = self.v if v is None else v
-        return fsolve(self.calc_moment, x0=0.1, args=(v,))[0]
+        ret = fsolve(self.calc_moment, x0=0.1, args=(v,))
+        m = self.calc_moment(ret[0], v)
+        return ret[0]
 
     def set_velocity(self, v):
         self.v = v
