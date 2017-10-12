@@ -39,20 +39,21 @@ class Kite(object):
         return 0.5 * self.lk * self.hk
 
     def calc_force(self, alpha, v):
-        fz = 0.5 * rho_air * v ** 2 * self.horizontal_area * self.calc_cl(alpha) - self.weight * g
-        fx = 0.5 * rho_air * v ** 2 * self.calc_cd(alpha)
+        q = 0.5 * rho_air * v ** 2
+        fz = q * self.horizontal_area * self.calc_cl(alpha) - self.weight * g
+        fx = q * self.horizontal_area * self.calc_cd(alpha)
         return np.array([fx, fz])
 
     def calc_moment(self, alpha, v, x, z):
         q = 0.5 * rho_air * v ** 2
         L = q * self.horizontal_area * self.calc_cl(alpha)
-        D = q * self.calc_cd(alpha)
-        M = q * self.horizontal_area * self.calc_cm(alpha)
+        D = q * self.horizontal_area * self.calc_cd(alpha)
+        M = q * self.horizontal_area * self.lk * self.calc_cm(alpha)
         return (self.lk / 3 * cos(alpha) - x) * self.weight * g - (self.lk / 2 * cos(alpha) - x) * L + \
                M + D * (-self.lk / 2 * sin(alpha) - z)
 
     def calc_cl(self, alpha):
-        return 0.9848 * (alpha) ** 2 + 0.7665 * (alpha) + 0.1002
+        return 0.9848 * alpha ** 2 + 0.7665 * alpha + 0.1002
 
     def calc_cd(self, aoa):
         tmp = (1.8524 * (aoa) ** 2 - 0.1797 * (aoa)) * self.horizontal_area + \
@@ -159,10 +160,10 @@ class Envelope(object):
         return 2 * np.pi * a ** 2 * (1. + (1. - e ** 2) / e * np.arctanh(e))
 
     def calc_cl(self, aoa):
-        return (-0.3269 * (aoa) ** 2 + 0.8036 * (aoa) + 0.0049)
+        return -0.3269 * (aoa) ** 2 + 0.8036 * (aoa) + 0.0049
 
     def calc_cd(self, aoa):
-        return (0.3447 * (aoa) ** 2 + 0.0631 * (aoa) + 0.0989)
+        return 0.3447 * (aoa) ** 2 + 0.0631 * (aoa) + 0.0989
 
     def calc_cm(self, aoa):
         return -(0.2071 * (aoa) ** 2 - 0.5647 * (aoa) + 0.0012)
@@ -175,9 +176,11 @@ class Envelope(object):
         return net_force
 
     def calc_moment(self, aoa, v, x, z):
+        q = 0.5 * rho_air * v ** 2
         net_force = self.calc_force(aoa, v)
         x0, z0 = self.c * sin(aoa), self.c * cos(aoa)
-        return net_force[0] * (z0 - z) - net_force[1] * (x0 - x)
+        M = q * 2 * self.a * self.ref_area * self.calc_cm(aoa)
+        return net_force[0] * (z0 - z) - net_force[1] * (x0 - x) + M
 
     def print_info(self):
         print("Semi-major axis:\t%.3f" % self.a)
@@ -205,13 +208,16 @@ class Aerostat(object):
         net_force = np.zeros(2)
         net_force += self.kite.calc_force(aoa, v)
         net_force += self.envelope.calc_force(aoa, v)
+        net_force[1] -= w_excess * g
         return net_force
 
     def calc_moment(self, aoa, v=None):
         v = self.v if v is None else v
+        x = -self.zc * sin(aoa) - self.xc * cos(aoa)
+        z = self.xc * sin(aoa) - self.zc * cos(aoa)
         net_moment = 0.
-        net_moment += self.kite.calc_moment(aoa, v, -self.xc, -self.zc)
-        net_moment += self.envelope.calc_moment(aoa, v, -self.xc, -self.zc)
+        net_moment += self.kite.calc_moment(aoa, v, x, z)
+        net_moment += self.envelope.calc_moment(aoa, v, x, z)
 
         return net_moment
 
@@ -222,7 +228,6 @@ class Aerostat(object):
     def find_alpha(self, v):
         v = self.v if v is None else v
         ret = fsolve(self.calc_moment, x0=0.1, args=(v,))
-        m = self.calc_moment(ret[0], v)
         return ret[0]
 
     def set_velocity(self, v):
@@ -243,7 +248,7 @@ class Aerostat(object):
     def cm_alpha(self):
         assert (self.v is not None)
         q = 0.5 * rho_air * self.v ** 2
-        return self.calc_moment_derivative(self.aoa, self.v) / (q * self.envelope.ref_area)
+        return self.calc_moment_derivative(self.aoa, self.v) / (q * self.envelope.ref_area * 2 * self.envelope.a)
 
     @property
     def blowby(self):

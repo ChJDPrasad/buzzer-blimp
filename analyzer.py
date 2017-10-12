@@ -51,15 +51,19 @@ def initial_sizing(lk, x, z):
 def analyze(lk=4.5, x=0., z=3., print_stuff=False):
     aerostat = initial_sizing(lk, x, z)
 
+    aoa = np.linspace(0, 20 * np.pi / 180, 100)
+    m = [aerostat.calc_moment(_, 6.) for _ in aoa]
+    plt.plot(aoa, m)
+    plt.show()
+
     N_circ = calc_circumferential_stress(aerostat, v)
     s_tether = calc_tether_stress(aerostat, v)
 
     if print_stuff:
         aerostat.print_info()
-
     return aerostat
 
 
 if __name__ == "__main__":
     # analyze(0.94746596, 14.996898, 1.05079009 print_stuff=True)
-    analyze(lk=1.814, x=1.2, z=15, print_stuff=True)
+    analyze(lk=1.814, x=1.2, z=15., print_stuff=True)
