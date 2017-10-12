@@ -2,7 +2,7 @@ from __future__ import print_function
 from constants import *
 import numpy as np
 import matplotlib.pyplot as plt
-from numpy import sin, cos, arctan
+from numpy import sin, cos, arctan, pi
 from numba import jit, njit
 from scipy.optimize import fsolve
 from scipy.misc import derivative
@@ -15,7 +15,7 @@ def sec(x):
 
 class Kite(object):
     def __init__(self, lk, bk, hk,
-                 spine_density=0.1, kite_density=rho_kite, rod_density=0.08):
+                 spine_density=0.08, kite_density=rho_kite, rod_density=0.01):
         self.lk = lk
         self.bk = bk
         self.hk = hk
@@ -53,12 +53,13 @@ class Kite(object):
                M + D * (-self.lk / 2 * sin(alpha) - z)
 
     def calc_cl(self, alpha):
+        # return 2 * pi * alpha
         return 0.9848 * alpha ** 2 + 0.7665 * alpha + 0.1002
 
     def calc_cd(self, aoa):
         tmp = (1.8524 * (aoa) ** 2 - 0.1797 * (aoa)) * self.horizontal_area + \
               0.1536 * (self.horizontal_area + self.vertical_area)
-        return tmp / self.horizontal_area
+        return 0.8 * tmp / self.horizontal_area
 
     def calc_cm(self, alpha):
         return -(0.2939 * (alpha) ** 2 + 0.5189 * (alpha) - 0.1921)
@@ -254,7 +255,8 @@ class Aerostat(object):
     def blowby(self):
         assert (self.v is not None)
         force = self.calc_force(self.aoa, self.v)
-        return self.tether.calc_blowby(force[0], force[1])
+        return self.tether.calc_blowby(force[0], force[1]) + \
+               self.zc * force[0] / (force[0] ** 2 + force[1] ** 2) ** 0.5
 
     @property
     def altitude(self):
@@ -264,11 +266,14 @@ class Aerostat(object):
 
     def print_info(self):
         assert (self.v is not None)
+        force = self.calc_force(self.aoa, self.v)
         self.envelope.print_info()
         self.tether.print_info()
         self.kite.print_info()
         print("cm\t%.3f" % self.cm)
         print("cm_alpha:\t%.3f" % self.cm_alpha)
         print("Angle of Attack:\t%.3f" % self.aoa)
+        print("Lift:\t%.3f" % force[0])
+        print("Drag:\t%.3f" % force[1])
         print("Blowby:\t%.3f" % self.blowby)
         print("Altitude:\t%.3f" % self.altitude)
