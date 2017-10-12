@@ -38,11 +38,27 @@ class Kite(object):
     def vertical_area(self):
         return 0.5 * self.lk * self.hk
 
-    def calc_cl(self, aoa):
-        raise NotImplementedError
+    def calc_force(self, alpha, v):
+        fz = 0.5 * rho_air * v**2 * self.horizontal_area * self.calc_cl(alpha) - self.weight * g
+        fx = 0.5 * rho_air * v**2 * self.calc_cd_with_area(alpha)
+        return np.array([fx, fz])
 
-    def calc_cd(self, aoa):
-        raise NotImplementedError
+    def calc_moment(self, alpha, v, x, z):
+        L = 0.5 * rho_air * v**2 * self.horizontal_area * self.calc_cl(alpha)
+        D = 0.5 * rho_air * v**2 * self.calc_cd_with_area(alpha)
+        M = 0.5 * rho_air * v**2 * self.horizontal_area * self.calc_cm(alpha)
+        return (self.lk / 3 * cos(alpha) - x) * self.weight * g - (self.lk / 2 * cos(alpha) - x) * L +\
+                M + D * (-lk / 2 * sin(alpha) - y)
+    
+    def calc_cl(self, alpha):
+        return (0.9848 * (alpha) ** 2 + 0.7665 * (alpha) + 0.1002)
+
+    def calc_cd_with_area(self, aoa):
+        return (1.8524 * (alpha) ** 2 - 0.1797 * (alpha)) * self.horizontal_area + \
+                0.1536 * (self.horizontal_area + self.vertical_area))
+
+    def calc_cm(self, alpha):
+        return -(0.2939 * (alpha) ** 2 + 0.5189 * (alpha) - 0.1921)
 
     def print_info(self):
         pass
