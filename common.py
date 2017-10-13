@@ -53,13 +53,14 @@ class Kite(object):
                M + D * (-self.lk / 2 * sin(alpha) - z)
 
     def calc_cl(self, alpha):
-        # return 2 * pi * alpha
-        return 0.9848 * alpha ** 2 + 0.7665 * alpha + 0.1002
+        return 2 * pi * alpha
+        # return 0.9848 * alpha ** 2 + 0.7665 * alpha + 0.1002
 
     def calc_cd(self, aoa):
-        tmp = (1.8524 * (aoa) ** 2 - 0.1797 * (aoa)) * self.horizontal_area + \
-              0.1536 * (self.horizontal_area + self.vertical_area)
-        return 0.8 * tmp / self.horizontal_area
+        return 0.05 + self.calc_cl(aoa) ** 2 / (pi * 1.08)
+        # tmp = (1.8524 * (aoa) ** 2 - 0.1797 * (aoa)) * self.horizontal_area + \
+        #       1.4 * 0.1536 * (self.horizontal_area + self.vertical_area)
+        # return 0.4 * tmp / self.horizontal_area
 
     def calc_cm(self, alpha):
         return -(0.2939 * (alpha) ** 2 + 0.5189 * (alpha) - 0.1921)
@@ -164,7 +165,7 @@ class Envelope(object):
         return -0.3269 * (aoa) ** 2 + 0.8036 * (aoa) + 0.0049
 
     def calc_cd(self, aoa):
-        return 0.3447 * (aoa) ** 2 + 0.0631 * (aoa) + 0.0989
+        return 0.3447 * (aoa) ** 2 + 0.0631 * (aoa) + 0.0989 * 1.4  # <- interference factor)
 
     def calc_cm(self, aoa):
         return -(0.2071 * (aoa) ** 2 - 0.5647 * (aoa) + 0.0012)
@@ -273,7 +274,7 @@ class Aerostat(object):
         print("cm\t%.3f" % self.cm)
         print("cm_alpha:\t%.3f" % self.cm_alpha)
         print("Angle of Attack:\t%.3f" % self.aoa)
-        print("Lift:\t%.3f" % force[0])
-        print("Drag:\t%.3f" % force[1])
+        print("Lift:\t%.3f" % force[1])
+        print("Drag:\t%.3f" % force[0])
         print("Blowby:\t%.3f" % self.blowby)
         print("Altitude:\t%.3f" % self.altitude)

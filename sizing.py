@@ -16,14 +16,16 @@ def calc_area(a, c):
     return 2 * np.pi * a ** 2 * (1. + (1. - e ** 2) / e * np.arctanh(e))
 
 
-def find_a(phi, kite, tether):
+def find_a(phi, kite, tether, free_lift=None):
+    free_lift_pct = fl if free_lift is None else free_lift
+
     surface_area = lambda a: calc_area(a, a / phi)
     w_e = lambda a: rho_envelope * surface_area(a)
     lift = lambda a: (rho_air - rho_gas) * calc_volume(a, a / phi)
 
     # Excluding common gravity term
     w_total = lambda a: w_excess + tether.weight + w_e(a) + kite.weight
-    free_lift = lambda a: (fl / 100.) * w_total(a)
+    free_lift = lambda a: (free_lift_pct / 100.) * w_total(a)
     excess_payload = lambda a: lift(a) - w_total(a) - free_lift(a)
 
     a = newton(lambda a: excess_payload(a), 5.)

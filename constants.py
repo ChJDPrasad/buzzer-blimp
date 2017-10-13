@@ -10,7 +10,7 @@ w_eqp = 3
 w_payload = 12.
 w_excess = w_eqp + w_payload
 
-fl = 70
+fl = 150
 g = 9.81
 
 v = 6.

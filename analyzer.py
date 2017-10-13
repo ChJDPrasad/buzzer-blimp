@@ -38,27 +38,28 @@ def print_info(tether, kite, envelope):
     print("Total weight", total_weight)
 
 
-def initial_sizing(lk, x, z):
+def sizing(lk, x, z, free_lift):
     kite = Kite(lk, 0.5 * 1.08 * lk, 0.)
     tether = Tether(100.)
 
-    a = find_a(1.6, kite, tether)
+    a = find_a(1.6, kite, tether, free_lift)
     envelope = Envelope(a, 1.6)
 
     return Aerostat(envelope, kite, tether, x, z, v)
 
 
-def analyze(lk=4.5, x=0., z=3., print_stuff=False):
-    aerostat = initial_sizing(lk, x, z)
+def analyze(lk=4.5, x=0., z=3., free_lift=70, print_stuff=False):
+    aerostat = sizing(lk, x, z, free_lift)
     N_circ = calc_circumferential_stress(aerostat, v)
-    # s_tether = calc_tether_stress(aerostat, v)
+    s_tether = calc_tether_stress(aerostat, v)
 
     if print_stuff:
         aerostat.print_info()
         print("Circumferential stress: %.3f" % N_circ)
-    return aerostat, N_circ
+        print("Tether stress: %.3f MPa" % (s_tether / 1e6))
+    return aerostat, N_circ, s_tether
 
 
 if __name__ == "__main__":
     # analyze(0.94746596, 14.996898, 1.05079009 print_stuff=True)
-    analyze(lk=0.1, x=1.2, z=15., print_stuff=True)
+    analyze(0.1, 0.0516, 4.99, print_stuff=True)
