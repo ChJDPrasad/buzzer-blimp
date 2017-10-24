@@ -7,6 +7,8 @@ from numba import jit, njit
 from scipy.optimize import fsolve
 from scipy.misc import derivative
 
+EPS = 1 - 7
+
 
 @njit
 def sec(x):
@@ -49,21 +51,50 @@ class Kite(object):
         L = q * self.horizontal_area * self.calc_cl(alpha)
         D = q * self.horizontal_area * self.calc_cd(alpha)
         M = q * self.horizontal_area * self.lk * self.calc_cm(alpha)
-        return (self.lk / 3 * cos(alpha) - x) * self.weight * g - (self.lk / 2 * cos(alpha) - x) * L + \
-               M + D * (-self.lk / 2 * sin(alpha) - z)
+        return (self.lk / 3. * cos(alpha) - x) * self.weight * g - (self.lk / 6. * cos(alpha) - x) * L + \
+               M + D * (-self.lk / 6. * sin(alpha) - z)
 
     def calc_cl(self, alpha):
+        """
+        Assuming flat plate like characteristics
+        """
         return 2 * pi * alpha
-        # return 0.9848 * alpha ** 2 + 0.7665 * alpha + 0.1002
 
-    def calc_cd(self, aoa):
-        return 0.05 + self.calc_cl(aoa) ** 2 / (pi * 1.08)
-        # tmp = (1.8524 * (aoa) ** 2 - 0.1797 * (aoa)) * self.horizontal_area + \
-        #       1.4 * 0.1536 * (self.horizontal_area + self.vertical_area)
-        # return 0.4 * tmp / self.horizontal_area
+    def calc_cd(self, alpha):
+        """
+        cd0 from cd for a turbulent flat plate parallel to a flow.
+        Assume Oswald efficiency factor, e = 0.95
+
+
+        Multiply cd0 by 1.4 for interference drag.
+        Fin factor helps account for the drag due to the vertical fin
+        """
+        aspect_ratio = self.bk ** 2 / self.horizontal_area
+        if self.horizontal_area < EPS:
+            fin_factor = 1.
+        else:
+            fin_factor = (self.horizontal_area + self.vertical_area) / (self.horizontal_area)
+        return 0.005 * 1.4 * fin_factor + self.calc_cl(alpha) ** 2 / (pi * 0.95 * aspect_ratio)
 
     def calc_cm(self, alpha):
-        return -(0.2939 * (alpha) ** 2 + 0.5189 * (alpha) - 0.1921)
+        """
+        Aerodynamic center and centre of pressure
+        at c_r / 6.
+        """
+        return 0.
+
+    # def calc_cl(self, alpha):
+    #     return 2 * pi * alpha
+    #     # return 0.9848 * alpha ** 2 + 0.7665 * alpha + 0.1002
+    #
+    # def calc_cd(self, aoa):
+    #     return 0.05 + self.calc_cl(aoa) ** 2 / (pi * 1.08)
+    #     # tmp = (1.8524 * (aoa) ** 2 - 0.1797 * (aoa)) * self.horizontal_area + \
+    #     #       1.4 * 0.1536 * (self.horizontal_area + self.vertical_area)
+    #     # return 0.4 * tmp / self.horizontal_area
+    #
+    # def calc_cm(self, alpha):
+    #     return -(0.2939 * (alpha) ** 2 + 0.5189 * (alpha) - 0.1921)
 
     def print_info(self):
         pass
