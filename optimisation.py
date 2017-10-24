@@ -4,7 +4,7 @@ from pyswarm import pso
 
 
 def analyze_local(x, print_stuff=False):
-    return analyze(x[0], x[1], x[2], x[3], print_stuff=print_stuff)
+    return analyze(x[0], x[1], x[2], x[3], x[4], print_stuff=print_stuff)
 
 
 def cost(x):
@@ -48,9 +48,19 @@ def kite_sanity(x):
     aerostat = analyze_local(x)[0]
     return 2 * aerostat.envelope.a - x[0]
 
-g, f = pso(cost, [0.1, 0., 0., 15], [15., 5., 5., 500],
+
+def kite_sanity2(x):
+    """
+    Ensure kite wingspan is smaller than diameter of envelope
+    """
+    aerostat = analyze_local(x)[0]
+    return 2 * aerostat.envelope.a - x[4]
+
+
+g, f = pso(cost, [0.1, 0., 0., 15, 0], [15., 5., 5., 500, 5],
            ieqcons=[stability_constraints, stability_constraints2,
                     structural_constraints1, tether_constraint,
-                    blowby_constraint, kite_sanity],
+                    blowby_constraint,
+                    kite_sanity, kite_sanity2],
            debug=True, maxiter=20)
 analyze_local(g, print_stuff=True)

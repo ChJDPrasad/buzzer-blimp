@@ -7,7 +7,7 @@ from numba import jit, njit
 from scipy.optimize import fsolve
 from scipy.misc import derivative
 
-EPS = 1 - 7
+EPS = 1e-7
 
 
 @njit
@@ -73,7 +73,11 @@ class Kite(object):
         if self.horizontal_area < EPS:
             fin_factor = 1.
         else:
-            fin_factor = (self.horizontal_area + self.vertical_area) / (self.horizontal_area)
+
+            fin_factor = (self.horizontal_area + self.vertical_area) / self.horizontal_area
+            if np.isnan(fin_factor):
+                print(self.horizontal_area, self.vertical_area)
+                exit(0)
         return 0.005 * 1.4 * fin_factor + self.calc_cl(alpha) ** 2 / (pi * 0.95 * aspect_ratio)
 
     def calc_cm(self, alpha):
