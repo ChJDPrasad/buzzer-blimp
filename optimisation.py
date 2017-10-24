@@ -37,7 +37,7 @@ def tether_constraint(x, *args):
 
 def blowby_constraint(x):
     r = analyze_local(x)[0]
-    return -r.blowby + 25.
+    return -r.blowby + 20.
 
 
 # Sanity constriants
@@ -56,11 +56,19 @@ def kite_sanity2(x):
     aerostat = analyze_local(x)[0]
     return 2 * aerostat.envelope.a - x[4]
 
+def confluence_sanity(x):
+    """
+    Dynamics of tether between envelope and confluence point
+    will need to be evaluated if the confluence point is really far away.
+    Therefore, limiting confluence point vertical distance
+    """
+    aerostat = analyze_local(x)[0]
+    return 3.5 * aerostat.envelope.c - x[3]
 
-g, f = pso(cost, [0.1, 0., 0., 15, 0], [15., 5., 5., 500, 5],
+g, f = pso(cost, [0.1, 0., 0., 15, 0], [8., 5., 5., 500, 5],
            ieqcons=[stability_constraints, stability_constraints2,
                     structural_constraints1, tether_constraint,
                     blowby_constraint,
                     kite_sanity, kite_sanity2],
-           debug=True, maxiter=20)
+           debug=True, maxiter=50, swarmsize=200)
 analyze_local(g, print_stuff=True)
