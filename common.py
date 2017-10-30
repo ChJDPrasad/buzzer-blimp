@@ -6,6 +6,7 @@ from numpy import sin, cos, arctan, pi
 from numba import jit, njit
 from scipy.optimize import fsolve
 from scipy.misc import derivative
+from prandtl import delta_cl_cd
 
 EPS = 1e-7
 
@@ -17,13 +18,16 @@ def sec(x):
 
 class Kite(object):
     def __init__(self, lk, bk, hk,
-                 spine_density=0.08, kite_density=rho_kite, rod_density=0.01):
+                 spine_density=0.08, kite_density=rho_kite, rod_density=0.01, length_covered=0.):
         self.lk = lk
         self.bk = bk
         self.hk = hk
         self.spine_density = spine_density
         self.envelope_density = kite_density
         self.rod_density = rod_density
+
+        if ITERATION is 3:
+            self._calc_cl, self._calc_cd = delta_cl_cd(self.aspect_ratio)
 
     @property
     def weight(self):
@@ -40,6 +44,13 @@ class Kite(object):
     def vertical_area(self):
         return 0.5 * self.lk * self.hk
 
+    @property
+    def aspect_ratio(self):
+        if self.horizontal_area < 1e-10:
+            return 1.
+        else:
+            return self.bk ** 2 / self.horizontal_area
+
     def calc_force(self, alpha, v):
         q = 0.5 * rho_air * v ** 2
         fz = q * self.horizontal_area * self.calc_cl(alpha) - self.weight * g
@@ -55,10 +66,15 @@ class Kite(object):
                M + D * (-self.lk / 6. * sin(alpha) - z)
 
     def calc_cl(self, alpha):
-        """
-        Assuming flat plate like characteristics
-        """
-        return 2 * pi * alpha
+
+        if ITERATION is 2:
+            """
+            Assuming flat plate like characteristics
+            """
+            aspect_ratio = self.bk ** 2 / self.horizontal_area
+            return 2 * pi / (1. + 2. / (pi * 0.95 * aspect_ratio)) * alpha
+        elif ITERATION is 3:
+            return self._calc_cl(alpha)
 
     def calc_cd(self, alpha):
         """
@@ -69,16 +85,26 @@ class Kite(object):
         Multiply cd0 by 1.4 for interference drag.
         Fin factor helps account for the drag due to the vertical fin
         """
-        aspect_ratio = self.bk ** 2 / self.horizontal_area
         if self.horizontal_area < EPS:
             fin_factor = 1.
         else:
-
             fin_factor = (self.horizontal_area + self.vertical_area) / self.horizontal_area
             if np.isnan(fin_factor):
-                print(self.horizontal_area, self.vertical_area)
+                print('isnan', self.horizontal_area, self.vertical_area)
                 exit(0)
-        return 0.005 * 1.4 * fin_factor + self.calc_cl(alpha) ** 2 / (pi * 0.95 * aspect_ratio)
+        if ITERATION is 1:
+            return 0.005 + self.calc_cl(alpha) ** 2 / (pi * 0.95 * self.aspect_ratio)
+        elif ITERATION is 2:
+            """
+            Interference factor included for second iteration
+            """
+            return 0.005 * 1.4 * fin_factor + \
+                   self.calc_cl(alpha) ** 2 / (pi * 0.95 * self.aspect_ratio)
+        elif ITERATION is 3:
+            """
+            Interface drag included. cd calculated from prandtl lift line
+            """
+            return 0.005 * 1.4 * fin_factor + self._calc_cd(alpha)
 
     def calc_cm(self, alpha):
         """
@@ -118,12 +144,15 @@ class Tether(object):
     def area(self):
         return np.pi * self.radius ** 2
 
-    def _displacements(self, Tx, Ty):
-        x, y = self.calc_profile(Tx, Ty)
+    def _displacements(self, Tx, Ty, cd=None, ds=0.2):
+        x, y = self.calc_profile(Tx, Ty, cd, ds)
         return x[-1], y[-1]
 
     @jit
-    def calc_profile(self, Tx, Ty, cd=1., ds=0.2):
+    def calc_profile(self, Tx, Ty, cd=None, ds=0.2):
+        if cd is None:
+            cd = self._get_default_cd()
+
         n = int(self.length // ds + 2)
         theta0 = np.arctan(Ty / Tx)
         theta = np.zeros((n,))
@@ -149,15 +178,21 @@ class Tether(object):
 
         return x, y
 
-    def plot_profile(self, Tx, Ty):
-        x, y = self.calc_profile(Tx, Ty)
-        plt.plot(x, y)
+    def plot_profile(self, Tx, Ty, cd=None, ds=0.2, **kwargs):
+        x, y = self.calc_profile(Tx, Ty, cd, ds)
+        plt.plot(x, y, **kwargs)
 
-    def calc_blowby(self, Tx, Ty):
-        return self._displacements(Tx, Ty)[0]
+    def calc_blowby(self, Tx, Ty, cd=None, ds=0.2):
+        return self._displacements(Tx, Ty, cd, ds)[0]
 
-    def calc_altitude(self, Tx, Ty):
-        return self._displacements(Tx, Ty)[1]
+    def calc_altitude(self, Tx, Ty, cd=None, ds=0.2):
+        return self._displacements(Tx, Ty, cd, ds)[1]
+
+    def _get_default_cd(self):
+        if ITERATION is 1:
+            return 0.
+        else:
+            return 1.
 
     def print_info(self):
         pass
@@ -200,7 +235,11 @@ class Envelope(object):
         return -0.3269 * (aoa) ** 2 + 0.8036 * (aoa) + 0.0049
 
     def calc_cd(self, aoa):
-        return 0.3447 * (aoa) ** 2 + 0.0631 * (aoa) + 0.0989 * 1.4  # <- interference factor)
+        if ITERATION is 1:
+            interference_factor = 1.
+        else:
+            interference_factor = 1.4
+        return 0.3447 * (aoa) ** 2 + 0.0631 * (aoa) + 0.0989 * interference_factor  # <- interference factor)
 
     def calc_cm(self, aoa):
         return -(0.2071 * (aoa) ** 2 - 0.5647 * (aoa) + 0.0012)
@@ -243,7 +282,22 @@ class Aerostat(object):
     def calc_force(self, aoa, v=None):
         v = self.v if v is None else v
         net_force = np.zeros(2)
-        net_force += self.kite.calc_force(aoa, v)
+
+        if self.kite.lk > 1e-7 and self.kite.bk > 1e-7 and ITERATION >= 2:
+            # Length up to which kite is covered
+            l_covered = min(self.kite.lk, self.envelope.a)
+            # Wingspan at this distance
+            b_covered = self.kite.bk * (self.kite.lk - l_covered) / self.kite.lk
+            # Area which is not covered
+            free_area = self.kite.horizontal_area - l_covered * b_covered * 0.5
+            interference_factor = np.array([
+                (free_area + 0.5 * (self.kite.horizontal_area - free_area)) / self.kite.horizontal_area,
+                1.
+            ])
+        else:
+            interference_factor = np.ones(2)
+
+        net_force += self.kite.calc_force(aoa, v) * interference_factor
         net_force += self.envelope.calc_force(aoa, v)
         net_force[1] -= w_excess * g
         return net_force

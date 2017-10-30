@@ -3,6 +3,8 @@ import numpy as np
 import seaborn
 from common import Tether
 from analyzer import analyze
+from constants import *
+
 #
 # alpha = np.linspace(0., 0.5, 5)
 # plt.title('Cl vs alpha (rad)')
@@ -20,13 +22,37 @@ from analyzer import analyze
 # plt.savefig('plots/kite-cm.png', bbox_inches="tight")
 # plt.clf()
 #
-# tether = Tether(100., 1.)
-# plt.title('Tether profile')
-# tether.plot_profile(100., 1081)
-# plt.xlabel('x')
-# plt.ylabel('y')
-# plt.savefig('plots/tether-profile.png', bbox_inches="tight")
-# plt.clf()
+tether = Tether(100., 1.)
+plt.title('Tether profile')
+tether.plot_profile(100., 1081., cd=0.)
+plt.xlabel('x')
+plt.ylabel('y')
+plt.axis('equal')
+plt.savefig('plots/tether-profile-no-drag.png', bbox_inches="tight")
+plt.clf()
+
+v_global = v
+tether = Tether(100., 1.)
+plt.title('Tether profile')
+for v_here in [2, 6, 10, 15, 20]:
+    v = v_here
+    tether.plot_profile(100., 1081.)
+plt.xlabel('x')
+plt.ylabel('y')
+plt.axis('equal')
+plt.savefig('plots/tether-profile-with-drag.png', bbox_inches="tight")
+plt.clf()
+
+tether = Tether(1000., 1.)
+plt.title('Tether profile')
+tether.plot_profile(1000., g * tether.weight + 100, cd=0., label='No drag')
+tether.plot_profile(1000., g * tether.weight + 100, label='With drag')
+plt.xlabel('x')
+plt.ylabel('y')
+plt.axis('equal')
+plt.savefig('plots/tether-profile-with-and-without-drag.png', bbox_inches="tight")
+plt.clf()
+
 #
 # plt.title("Blowby variation vs Kite length")
 # kl = np.linspace(3.6, 7., 200)

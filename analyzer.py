@@ -40,7 +40,7 @@ def print_info(tether, kite, envelope):
 
 def sizing(lk, x, z, free_lift, bk):
     # kite = Kite(lk, 0.5 * 1.08 * lk, 0.)
-    kite = Kite(lk, bk, 0.35 * bk)
+    kite = Kite(lk, bk, 0.25 * bk)
     tether = Tether(100.)
 
     a = find_a(1.6, kite, tether, free_lift)
