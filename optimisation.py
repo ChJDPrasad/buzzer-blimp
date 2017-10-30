@@ -6,7 +6,10 @@ import os
 
 
 def analyze_local(x, print_stuff=False):
-    return analyze(x[0], x[1], x[2], x[3], x[4], print_stuff=print_stuff)
+    if ITERATION is 2:
+        return analyze(x[0], x[1], x[2], x[3],  print_stuff=print_stuff)
+    elif ITERATION is 3:
+        return analyze(x[0], x[1], x[2], x[3], x[4], print_stuff=print_stuff)
 
 
 _cache = {}
@@ -76,16 +79,42 @@ def confluence_sanity(x):
     return 2. * aerostat.envelope.c - x[2]
 
 
-def optimize():
-    g, f = pso(cost, [0.1, 0., 0., 15, 0], [8., 0.01, 7., 350, 6.],
+def optimize_iteration2():
+    g, f = pso(cost, [0.1, 0., 0., 15], [9., 10., 7., 350],
+               ieqcons=[stability_constraints, stability_constraints2,
+                        structural_constraints1, tether_constraint,
+                        blowby_constraint,
+                        kite_sanity,
+                        confluence_sanity],
+               debug=True, maxiter=100, swarmsize=200)
+
+    fname = 'iter2.csv'
+    df = pd.DataFrame({
+        'kite_length': [g[0]],
+        'xc': [g[1]],
+        'zc': [g[2]],
+        'free_lift': [g[3]],
+        'volume': [f],
+    })
+
+    if not os.path.isfile(fname):
+        df.to_csv(fname, index=False)
+    else:
+        df.to_csv(fname, mode='a', header=False, index=False)
+
+    analyze_local(g, print_stuff=True)
+
+
+def optimize_iteration3():
+    g, f = pso(cost, [0.1, 0., 0., 15], [8., 0.01, 7., 350],
                ieqcons=[stability_constraints, stability_constraints2,
                         structural_constraints1, tether_constraint,
                         blowby_constraint,
                         kite_sanity, kite_sanity2,
                         confluence_sanity],
-               debug=True, maxiter=100, swarmsize=200)
+               debug=True, maxiter=200, swarmsize=200)
 
-    fname = 'iter%d.csv' % ITERATION
+    fname = 'iter3.csv'
     df = pd.DataFrame({
         'kite_length': [g[0]],
         'xc': [g[1]],
@@ -102,5 +131,6 @@ def optimize():
 
     analyze_local(g, print_stuff=True)
 
-for i in range(9):
-    optimize()
+
+if __name__ == "__main__":
+    optimize_iteration2()

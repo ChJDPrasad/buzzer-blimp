@@ -39,6 +39,9 @@ def print_info(tether, kite, envelope):
 
 
 def sizing(lk, x, z, free_lift, bk):
+    if bk is None:
+        bk = 0.54 * lk
+
     # kite = Kite(lk, 0.5 * 1.08 * lk, 0.)
     kite = Kite(lk, bk, 0.25 * bk)
     tether = Tether(100.)
@@ -49,7 +52,7 @@ def sizing(lk, x, z, free_lift, bk):
     return Aerostat(envelope, kite, tether, x, z, v)
 
 
-def analyze(lk=4.5, x=0., z=3., free_lift=70, bk=1.2, print_stuff=False):
+def analyze(lk=4.5, x=0., z=3., free_lift=70, bk=None, print_stuff=False):
     aerostat = sizing(lk, x, z, free_lift, bk)
     N_circ = calc_circumferential_stress(aerostat, v)
     s_tether = calc_tether_stress(aerostat, v)
