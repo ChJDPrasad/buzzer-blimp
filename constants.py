@@ -15,4 +15,4 @@ g = 9.81
 
 v = 6.
 
-ITERATION=2
+ITERATION=1

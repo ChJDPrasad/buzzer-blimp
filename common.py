@@ -67,7 +67,7 @@ class Kite(object):
 
     def calc_cl(self, alpha):
 
-        if ITERATION is 2:
+        if ITERATION <= 2:
             """
             Assuming flat plate like characteristics
             """
